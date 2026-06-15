@@ -1,0 +1,135 @@
+# GitHub Actions workflow for the Rooman Authoring (Studio) MFE fork.
+#
+# Builds the MFE Docker image on every commit to the default branch
+# (`rooman/main`) and pushes it to GitHub Container Registry as
+#     ghcr.io/<owner>/<repo>:<branch>-<short-sha>
+#     ghcr.io/<owner>/<repo>:latest
+#
+# Permissions: this workflow requires `packages: write` so it can push to
+# GHCR using the repo's built-in GITHUB_TOKEN — no extra secrets needed.
+#
+# After the first successful run, the image is pull-able from any host
+# (Tutor on the LMS box) with:
+#     docker pull ghcr.io/<owner>/<repo>:latest
+#
+# For private repos: GHCR images default to private too. Either make the
+# package public (Settings → Packages on GitHub) or add a docker login
+# step on the LMS box pointing at a personal access token with read:packages.
+
+name: Build and push Authoring MFE image
+
+on:
+  push:
+    branches: [rooman/main]
+  workflow_dispatch:          # lets you re-run a build from the Actions tab
+
+# Cancel in-flight builds when a newer push lands on the same branch.
+# MFE builds take 4-6 min; nobody wants the slow one to win.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image tags
+        id: tags
+        run: |
+          # Lowercase owner — GHCR rejects mixed-case paths.
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          REPO_LOWER="${GITHUB_REPOSITORY,,}"   # owner/repo lowercased
+          SHORT_SHA="${GITHUB_SHA::7}"
+          BRANCH_TAG="${GITHUB_REF_NAME//\//-}-${SHORT_SHA}"
+          echo "image=ghcr.io/${REPO_LOWER}" >> "$GITHUB_OUTPUT"
+          echo "branch_tag=${BRANCH_TAG}"     >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          # `latest` makes the LMS box's `tutor images pull mfe` always
+          # grab the newest build. The sha-suffix tag is what you set in
+          # config.yml.example for reproducible prod deploys.
+          tags: |
+            ${{ steps.tags.outputs.image }}:latest
+            ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.branch_tag }}
+          push: true
+          # Reuse layers across builds so the typical "edit one React
+          # file" change rebuilds in ~90s instead of 6 min.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # The MFE Dockerfile takes one build-arg: the MFE name. Tutor
+          # injects all runtime config (LMS_BASE_URL etc.) at container
+          # start via env vars — nothing to bake in here.
+          build-args: |
+            APP_NAME=authoring
+
+      - name: Summary
+        run: |
+          echo "### Image pushed" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.tags.outputs.image }}:latest" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.branch_tag }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deploy with (verify the exact MFE var for your tutor-mfe version):" >> "$GITHUB_STEP_SUMMARY"
+          echo '```bash' >> "$GITHUB_STEP_SUMMARY"
+          echo "tutor config save --set MFE_AUTHORING_DOCKER_IMAGE=${{ steps.tags.outputs.image }}:latest" >> "$GITHUB_STEP_SUMMARY"
+          echo "tutor images pull mfe && tutor local restart mfe" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # ─────────────────────────────────────────────────────────────────
+      # Cross-repo dispatch: tell ChandanaSRooman/LMS that the MFE source
+      # has new commits, so its bundle workflow can rebuild.
+      #
+      # Requires a PAT in the secret `LMS_MONOREPO_DISPATCH_PAT` with:
+      #   - fine-grained, scoped only to ChandanaSRooman/LMS
+      #   - permission: Repository contents = read, Actions = write
+      # Without the secret, this step prints a warning and exits 0 —
+      # the MFE image push still succeeded.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Dispatch bundle rebuild to ChandanaSRooman/LMS
+        if: github.event_name == 'push'
+        env:
+          DISPATCH_PAT: ${{ secrets.LMS_MONOREPO_DISPATCH_PAT }}
+          DISPATCH_TARGET: ChandanaSRooman/LMS
+        run: |
+          set -euo pipefail
+          if [[ -z "${DISPATCH_PAT:-}" ]]; then
+            echo "::warning::LMS_MONOREPO_DISPATCH_PAT secret not set on this repo."
+            echo "::warning::MFE image was built+pushed OK, but the LMS-side bundle won't auto-rebuild."
+            echo "::warning::Trigger the LMS bundle workflow manually, or set the secret to enable auto-dispatch."
+            exit 0
+          fi
+          HTTP_CODE=$(curl -sS -L -o /tmp/dispatch.body -w '%{http_code}' \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${DISPATCH_PAT}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${DISPATCH_TARGET}/dispatches" \
+            -d "{\"event_type\":\"mfe-source-updated\",\"client_payload\":{\"sha\":\"${GITHUB_SHA}\",\"ref\":\"${GITHUB_REF}\",\"image\":\"${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.branch_tag }}\"}}")
+          if [[ "$HTTP_CODE" != "204" ]]; then
+            echo "::error::Dispatch failed with HTTP $HTTP_CODE"
+            cat /tmp/dispatch.body
+            exit 1
+          fi
+          echo "  -> dispatched mfe-source-updated to ${DISPATCH_TARGET}"
+          echo "     sha=${GITHUB_SHA}"
