@@ -28,6 +28,30 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+// Rooman: "New course" navigates to the Syllabus Agent via window.location.assign.
+// Stub it so the tests can assert navigation without a real jsdom navigation.
+const mockLocationAssign = jest.fn();
+const realLocation = window.location;
+beforeAll(() => {
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: {
+      ...realLocation,
+      href: realLocation.href,
+      origin: realLocation.origin,
+      pathname: realLocation.pathname,
+      search: realLocation.search,
+      hash: realLocation.hash,
+      assign: mockLocationAssign,
+      replace: jest.fn(),
+    },
+  });
+});
+afterAll(() => {
+  Object.defineProperty(window, 'location', { configurable: true, value: realLocation });
+});
+beforeEach(() => { mockLocationAssign.mockClear(); });
+
 /** Helper function to get the Studio header in the rendered HTML */
 function getHeaderElement(): HTMLElement {
   const header = screen.getByRole('banner');
@@ -173,22 +197,20 @@ describe('<StudioHome />', () => {
       expect(screen.queryByRole('button', { name: 'New library' })).toBeInTheDocument();
     });
 
-    it('should render "create new course" container', async () => {
+    it('should route "New course" to the Rooman Syllabus Agent', async () => {
       mockUseSelector.mockReturnValue({
         ...studioHomeMock,
         courseCreatorStatus: COURSE_CREATOR_STATES.granted,
       });
 
-      const newCourseContainerText = 'Create a new course';
       render(<StudioHome />, { path: '/home' });
 
-      expect(screen.queryByText(newCourseContainerText)).not.toBeInTheDocument();
       const createNewCourseButton = screen.getByRole('button', { name: 'New course' });
       fireEvent.click(createNewCourseButton);
-      expect(screen.queryByText(newCourseContainerText)).toBeInTheDocument();
+      expect(mockLocationAssign).toHaveBeenCalledWith(expect.stringContaining('/syllabus/'));
     });
 
-    it('should hide "create new course" container', async () => {
+    it('does not show the inline "create new course" form (routes externally)', async () => {
       mockUseSelector.mockReturnValue({
         ...studioHomeMock,
         courseCreatorStatus: COURSE_CREATOR_STATES.granted,
@@ -199,10 +221,7 @@ describe('<StudioHome />', () => {
 
       const createNewCourseButton = screen.getByRole('button', { name: 'New course' });
       fireEvent.click(createNewCourseButton);
-      expect(screen.queryByText(newCourseContainerText)).toBeInTheDocument();
-
-      const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-      fireEvent.click(cancelButton);
+      expect(mockLocationAssign).toHaveBeenCalled();
       expect(screen.queryByText(newCourseContainerText)).not.toBeInTheDocument();
     });
 
@@ -233,7 +252,7 @@ describe('<StudioHome />', () => {
         const addCourseButton = screen.getByTestId('contact-admin-create-course');
         expect(addCourseButton).toBeVisible();
         fireEvent.click(addCourseButton);
-        expect(screen.getByTestId('create-course-form')).toBeVisible();
+        expect(mockLocationAssign).toHaveBeenCalledWith(expect.stringContaining('/syllabus/'));
       });
     });
 
