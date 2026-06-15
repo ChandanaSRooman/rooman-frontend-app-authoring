@@ -21,7 +21,6 @@ import HomeSidebar from './home-sidebar';
 import TabsSection from './tabs-section';
 import OrganizationSection from './organization-section';
 import VerifyEmailLayout from './verify-email-layout';
-import CreateNewCourseForm from './create-new-course-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
@@ -53,7 +52,6 @@ const StudioHome = () => {
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
-    setShowNewCourseContainer,
     librariesV1Enabled,
     librariesV2Enabled,
   } = useStudioHome();
@@ -168,9 +166,6 @@ const StudioHome = () => {
       >
         <Layout.Element>
           <section>
-            {showNewCourseContainer && (
-              <CreateNewCourseForm handleOnClickCancel={() => setShowNewCourseContainer(false)} />
-            )}
             {isShowOrganizationDropdown && <OrganizationSection />}
             <TabsSection
               showNewCourseContainer={showNewCourseContainer}
