@@ -30,7 +30,7 @@ import AlertMessage from '../generic/alert-message';
 // flow) instead of Studio's built-in new-course form. The URL is configurable
 // via the MFE runtime config key ROOMAN_SYLLABUS_URL; falls back to the dev host.
 const goToRoomanSyllabus = () => {
-  const cfg = getConfig() as { ROOMAN_SYLLABUS_URL?: string };
+  const cfg = getConfig() as { ROOMAN_SYLLABUS_URL?: string; };
   window.location.assign(
     cfg.ROOMAN_SYLLABUS_URL || 'https://dev-labs.13-232-120-92.sslip.io/syllabus/',
   );
