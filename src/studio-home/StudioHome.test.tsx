@@ -50,7 +50,9 @@ beforeAll(() => {
 afterAll(() => {
   Object.defineProperty(window, 'location', { configurable: true, value: realLocation });
 });
-beforeEach(() => { mockLocationAssign.mockClear(); });
+beforeEach(() => {
+  mockLocationAssign.mockClear();
+});
 
 /** Helper function to get the Studio header in the rendered HTML */
 function getHeaderElement(): HTMLElement {
