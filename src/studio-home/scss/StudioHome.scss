@@ -12,6 +12,15 @@
 // is absolutely positioned over the nav bar (clearing the logo on the left
 // and the search + account menu on the right); on narrow screens it falls
 // back to a normal row below the bar.
+//
+// COUPLING NOTE: On ≥992px the overlay clears the chrome of
+// @edx/frontend-component-header (StudioHeader). The clearance values below
+// must be updated if that package changes its left/right chrome widths.
+// Left chrome: ~9.5rem (logo + horizontal padding).
+// Right chrome: ~13rem (search button + account menu + padding).
+$_header-left-chrome: 9.5rem;
+$_header-right-chrome: 13rem;
+
 .studio-home-header-bar {
   position: relative;
 
@@ -51,8 +60,7 @@
       right: 0;
       height: 100%;
       margin: 0 auto;
-      // L 9.5rem clears the logo; R 13rem clears the search button + account menu
-      padding: 0 13rem 0 9.5rem;
+      padding: 0 $_header-right-chrome 0 $_header-left-chrome;
       flex-wrap: nowrap;
       pointer-events: none;  // let clicks fall through to the nav bar beneath
     }

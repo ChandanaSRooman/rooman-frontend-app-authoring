@@ -181,7 +181,7 @@ const StudioHome = () => {
           <h1 className="studio-home-header-bar__title">
             {intl.formatMessage(messages.headingTitle, { studioShortName: studioShortName || 'Studio' })}
           </h1>
-          <div className="studio-home-header-bar__spacer" />
+          <div className="studio-home-header-bar__spacer" aria-hidden="true" />
           <div className="studio-home-header-bar__actions">
             {headerButtons.map((button, index) => (
               // eslint-disable-next-line react/no-array-index-key
