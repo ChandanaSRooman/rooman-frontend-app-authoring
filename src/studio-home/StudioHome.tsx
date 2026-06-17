@@ -171,8 +171,10 @@ const StudioHome = () => {
 
   return (
     <>
-      {/* Single merged header: the studio nav bar (logo + search + account) with
-          the page title and primary actions injected into its empty middle. */}
+      {
+        /* Single merged header: the studio nav bar (logo + search + account) with
+          the page title and primary actions injected into its empty middle. */
+      }
       <div className="studio-home-header-bar">
         <Header isHiddenMainMenu />
         {showHeaderActions && (

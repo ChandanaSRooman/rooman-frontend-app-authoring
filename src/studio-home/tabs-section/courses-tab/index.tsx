@@ -84,7 +84,10 @@ const CardList = ({
               columnSizes={inSelectMode
                 ? { xs: 12 }
                 : {
-                  xs: 12, md: 6, lg: 6, xl: 4,
+                  xs: 12,
+                  md: 6,
+                  lg: 6,
+                  xl: 4,
                 }}
             >
               {courses.map(

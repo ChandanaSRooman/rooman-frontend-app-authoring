@@ -5,10 +5,11 @@ export const getApiBaseUrl = () => getConfig().STUDIO_BASE_URL;
 export const getStudioHomeApiUrl = () => new URL('api/contentstore/v1/home', getApiBaseUrl()).href;
 export const getRequestCourseCreatorUrl = () => new URL('request_course_creator', getApiBaseUrl()).href;
 export const getCourseNotificationUrl = (url) => new URL(url, getApiBaseUrl()).href;
-export const getDeleteCourseUrl = (courseId: string) => new URL(
-  `rooman/courses/${courseId}/`,
-  getApiBaseUrl(),
-).href;
+export const getDeleteCourseUrl = (courseId: string) =>
+  new URL(
+    `rooman/courses/${encodeURIComponent(courseId)}/`,
+    getApiBaseUrl(),
+  ).href;
 
 /**
  * Get's studio home data.

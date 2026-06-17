@@ -20,7 +20,11 @@ import {
   useToggle,
 } from '@openedx/paragon';
 import {
-  ArrowForward, DeleteOutline, Edit as EditIcon, Launch, MoreHoriz,
+  ArrowForward,
+  DeleteOutline,
+  Edit as EditIcon,
+  Launch,
+  MoreHoriz,
 } from '@openedx/paragon/icons';
 import { FormattedMessage, useIntl } from '@edx/frontend-platform/i18n';
 import { getConfig } from '@edx/frontend-platform';
@@ -279,7 +283,7 @@ export const CardItem: React.FC<Props> = ({
 
   const [isDeleteOpen, openDelete, closeDelete] = useToggle(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [hasDeleteError, setHasDeleteError] = useState(false);
+  const [deleteErrorMsg, setDeleteErrorMsg] = useState('');
   const [confirmText, setConfirmText] = useState('');
 
   const destinationUrl: string = path ?? (
@@ -293,7 +297,7 @@ export const CardItem: React.FC<Props> = ({
 
   const handleOpenDelete = useCallback(() => {
     setConfirmText('');
-    setHasDeleteError(false);
+    setDeleteErrorMsg('');
     openDelete();
   }, [openDelete]);
 
@@ -304,17 +308,24 @@ export const CardItem: React.FC<Props> = ({
 
   const handleConfirmDelete = useCallback(async () => {
     setIsDeleting(true);
-    setHasDeleteError(false);
+    setDeleteErrorMsg('');
     try {
       await deleteCourse(courseKey);
       handleCloseDelete();
       onDeleted?.();
-    } catch {
-      setHasDeleteError(true);
+    } catch (err) {
+      // Surface the backend message when present (e.g. a 403 permission denial
+      // vs a generic 500) so the user understands why the delete was refused.
+      const backendMsg = (err as { response?: { data?: { error?: string; }; }; })?.response?.data?.error;
+      setDeleteErrorMsg(
+        typeof backendMsg === 'string' && backendMsg
+          ? backendMsg
+          : intl.formatMessage(messages.deleteCourseError),
+      );
     } finally {
       setIsDeleting(false);
     }
-  }, [courseKey, onDeleted, handleCloseDelete]);
+  }, [courseKey, onDeleted, handleCloseDelete, intl]);
   const isShowRerunLink = allowCourseReruns
     && rerunCreatorStatus
     && courseCreatorStatus === COURSE_CREATOR_STATES.granted;
@@ -393,27 +404,29 @@ export const CardItem: React.FC<Props> = ({
         )}
         {showActionsMenu && (
           <Card.Footer className="card-item-footer bg-white pt-0 justify-content-end">
-            {isExternalUrl ? (
-              <Button
-                as="a"
-                href={destinationUrl}
-                variant="outline-primary"
-                size="sm"
-                iconBefore={EditIcon}
-              >
-                {intl.formatMessage(messages.editBtnText)}
-              </Button>
-            ) : (
-              <Button
-                as={Link}
-                to={destinationUrl}
-                variant="outline-primary"
-                size="sm"
-                iconBefore={EditIcon}
-              >
-                {intl.formatMessage(messages.editBtnText)}
-              </Button>
-            )}
+            {isExternalUrl ?
+              (
+                <Button
+                  as="a"
+                  href={destinationUrl}
+                  variant="outline-primary"
+                  size="sm"
+                  iconBefore={EditIcon}
+                >
+                  {intl.formatMessage(messages.editBtnText)}
+                </Button>
+              ) :
+              (
+                <Button
+                  as={Link}
+                  to={destinationUrl}
+                  variant="outline-primary"
+                  size="sm"
+                  iconBefore={EditIcon}
+                >
+                  {intl.formatMessage(messages.editBtnText)}
+                </Button>
+              )}
             {lmsLink && (
               <Button
                 variant="tertiary"
@@ -443,17 +456,15 @@ export const CardItem: React.FC<Props> = ({
           </ModalDialog.Title>
         </ModalDialog.Header>
         <ModalDialog.Body>
-          {hasDeleteError && (
+          {deleteErrorMsg && (
             <Alert variant="danger">
-              {intl.formatMessage(messages.deleteCourseError)}
+              {deleteErrorMsg}
             </Alert>
           )}
           <p>{intl.formatMessage(messages.deleteCourseModalBody, { title })}</p>
           <Form.Group>
             <Form.Label>
-              {intl.formatMessage(messages.deleteCourseModalConfirmPrompt)}
-              {' '}
-              <strong>{title}</strong>
+              {intl.formatMessage(messages.deleteCourseModalConfirmPrompt)} <strong>{title}</strong>
             </Form.Label>
             <Form.Control
               value={confirmText}
