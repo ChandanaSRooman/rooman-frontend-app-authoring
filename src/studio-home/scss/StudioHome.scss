@@ -28,7 +28,7 @@
     margin: 0;
     font-size: 1.5rem;
     font-weight: var(--pgn-typography-font-weight-bold, 700);
-    color: var(--pgn-color-primary-700, #1b2a5e);
+    color: var(--pgn-color-primary-700, #1B2A5E);
     white-space: nowrap;
   }
 
@@ -43,7 +43,7 @@
     gap: .5rem;
   }
 
-  @media (min-width: 992px) {
+  @media (width >= 992px) {
     .studio-home-header-bar__overlay {
       position: absolute;
       top: 0;
@@ -51,10 +51,8 @@
       right: 0;
       height: 100%;
       margin: 0 auto;
-      padding-top: 0;
-      padding-bottom: 0;
-      padding-left: 9.5rem;  // clear the logo
-      padding-right: 13rem;  // clear the search button + account menu
+      // L 9.5rem clears the logo; R 13rem clears the search button + account menu
+      padding: 0 13rem 0 9.5rem;
       flex-wrap: nowrap;
       pointer-events: none;  // let clicks fall through to the nav bar beneath
     }
