@@ -4,9 +4,65 @@
   .help-sidebar {
     margin-top: 0;
   }
+}
 
-  .studio-home-sub-header {
-    margin-bottom: 2rem;
+// ── Merged header bar ───────────────────────────────────────────────
+// The page title + primary actions are injected into the studio nav bar's
+// empty middle so they read as a single header. On wide screens the overlay
+// is absolutely positioned over the nav bar (clearing the logo on the left
+// and the search + account menu on the right); on narrow screens it falls
+// back to a normal row below the bar.
+.studio-home-header-bar {
+  position: relative;
+
+  .studio-home-header-bar__overlay {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .75rem 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .studio-home-header-bar__title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: var(--pgn-typography-font-weight-bold, 700);
+    color: var(--pgn-color-primary-700, #1b2a5e);
+    white-space: nowrap;
+  }
+
+  .studio-home-header-bar__spacer {
+    flex: 1 1 auto;
+  }
+
+  .studio-home-header-bar__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+
+  @media (min-width: 992px) {
+    .studio-home-header-bar__overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      margin: 0 auto;
+      padding-top: 0;
+      padding-bottom: 0;
+      padding-left: 9.5rem;  // clear the logo
+      padding-right: 13rem;  // clear the search button + account menu
+      flex-wrap: nowrap;
+      pointer-events: none;  // let clicks fall through to the nav bar beneath
+    }
+
+    .studio-home-header-bar__title,
+    .studio-home-header-bar__actions {
+      pointer-events: auto;
+    }
   }
 }
 
@@ -88,6 +144,15 @@
     font: normal var(--pgn-typography-font-weight-normal) .75rem/1.25rem var(--pgn-typography-font-family-base);
     color: var(--pgn-color-gray-700);
     margin: 0;
+  }
+
+  // Keep the action buttons pinned to the bottom so cards of differing
+  // title lengths still line up their footers within a grid row.
+  .card-item-footer {
+    margin-top: auto;
+    display: flex;
+    gap: .5rem;
+    padding: .75rem 1.25rem 1rem;
   }
 }
 

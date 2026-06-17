@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FormattedMessage, useIntl } from '@edx/frontend-platform/i18n';
 import {
+  CardGrid,
   Icon,
   Row,
   Pagination,
@@ -45,6 +46,7 @@ interface CardListProps {
   inSelectMode?: boolean;
   selectedCourseId?: string;
   migrationStatusWidget?: React.ComponentType<MigrationStatusProps>;
+  onCourseDeleted?: () => void;
 }
 
 const CardList = ({
@@ -60,6 +62,7 @@ const CardList = ({
   inSelectMode = false,
   selectedCourseId,
   migrationStatusWidget,
+  onCourseDeleted,
 }: CardListProps) => {
   const {
     courses: allCourses,
@@ -77,36 +80,45 @@ const CardList = ({
       {hasCourses ?
         (
           <>
-            {courses.map(
-              ({
-                courseKey,
-                displayName,
-                lmsLink,
-                org,
-                rerunLink,
-                number,
-                run,
-                url,
-              }) => (
-                <CardItem
-                  key={courseKey}
-                  courseKey={courseKey}
-                  onClick={() => onClickCard?.(courseKey)}
-                  itemId={courseKey}
-                  displayName={displayName}
-                  lmsLink={lmsLink}
-                  rerunLink={rerunLink}
-                  org={org}
-                  number={number}
-                  run={run}
-                  url={url}
-                  selectMode={inSelectMode ? 'single' : undefined}
-                  selectPosition={inSelectMode ? 'card' : undefined}
-                  isSelected={inSelectMode && selectedCourseId === courseKey}
-                  subtitleBeforeWidget={MigrationStatusWidget && <MigrationStatusWidget courseId={courseKey} />}
-                />
-              ),
-            )}
+            <CardGrid
+              columnSizes={inSelectMode
+                ? { xs: 12 }
+                : {
+                  xs: 12, md: 6, lg: 6, xl: 4,
+                }}
+            >
+              {courses.map(
+                ({
+                  courseKey,
+                  displayName,
+                  lmsLink,
+                  org,
+                  rerunLink,
+                  number,
+                  run,
+                  url,
+                }) => (
+                  <CardItem
+                    key={courseKey}
+                    courseKey={courseKey}
+                    onClick={() => onClickCard?.(courseKey)}
+                    itemId={courseKey}
+                    displayName={displayName}
+                    lmsLink={lmsLink}
+                    rerunLink={rerunLink}
+                    org={org}
+                    number={number}
+                    run={run}
+                    url={url}
+                    selectMode={inSelectMode ? 'single' : undefined}
+                    selectPosition={inSelectMode ? 'card' : undefined}
+                    isSelected={inSelectMode && selectedCourseId === courseKey}
+                    subtitleBeforeWidget={MigrationStatusWidget && <MigrationStatusWidget courseId={courseKey} />}
+                    onDeleted={onCourseDeleted}
+                  />
+                ),
+              )}
+            </CardGrid>
 
             {numPages > 1 && (
               <Pagination
@@ -201,6 +213,10 @@ export const CoursesList: React.FC<Props> = ({
     dispatch(fetchStudioHomeData(locationValue, false, { page: 1, order: 'display_name' }));
   };
 
+  const handleCourseDeleted = () => {
+    dispatch(fetchStudioHomeData(locationValue, false, { ...studioHomeCoursesParams }));
+  };
+
   if (isLoading && !isFiltered) {
     return (
       <Row className="m-0 mt-4 justify-content-center">
@@ -264,6 +280,7 @@ export const CoursesList: React.FC<Props> = ({
                 hasAbilityToCreateCourse={hasAbilityToCreateCourse}
                 showNewCourseContainer={showNewCourseContainer}
                 onClickNewCourse={onClickNewCourse}
+                onCourseDeleted={handleCourseDeleted}
               />
             )}
 

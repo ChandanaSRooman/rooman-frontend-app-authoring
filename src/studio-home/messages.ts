@@ -58,6 +58,36 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.btn.view-live.text',
     defaultMessage: 'View live',
   },
+  editBtnText: {
+    id: 'course-authoring.studio-home.btn.edit.text',
+    defaultMessage: 'Edit',
+    description: 'Label for the button on a course card that opens the course in Studio.',
+  },
+  deleteCourseBtnText: {
+    id: 'course-authoring.studio-home.btn.delete-course.text',
+    defaultMessage: 'Delete course',
+    description: 'Label for the course-card menu item that deletes the course.',
+  },
+  deleteCourseModalTitle: {
+    id: 'course-authoring.studio-home.delete-course.modal.title',
+    defaultMessage: 'Delete this course?',
+  },
+  deleteCourseModalBody: {
+    id: 'course-authoring.studio-home.delete-course.modal.body',
+    defaultMessage: 'Are you sure you want to delete "{title}"? This permanently removes the course and all of its content. This action cannot be undone.',
+  },
+  deleteCourseModalCancel: {
+    id: 'course-authoring.studio-home.delete-course.modal.cancel',
+    defaultMessage: 'Cancel',
+  },
+  deleteCourseModalConfirm: {
+    id: 'course-authoring.studio-home.delete-course.modal.confirm',
+    defaultMessage: 'Delete course',
+  },
+  deleteCourseError: {
+    id: 'course-authoring.studio-home.delete-course.error',
+    defaultMessage: 'Failed to delete the course. Please try again.',
+  },
   organizationTitle: {
     id: 'course-authoring.studio-home.organization.title',
     defaultMessage: 'Organization and library settings',

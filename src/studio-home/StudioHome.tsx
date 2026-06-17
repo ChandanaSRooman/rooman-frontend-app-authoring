@@ -3,7 +3,6 @@ import {
   Button,
   Container,
   Icon,
-  Layout,
   MailtoLink,
   Row,
 } from '@openedx/paragon';
@@ -16,8 +15,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Loading from '../generic/Loading';
 import InternetConnectionAlert from '../generic/internet-connection-alert';
 import Header from '../header';
-import SubHeader from '../generic/sub-header/SubHeader';
-import HomeSidebar from './home-sidebar';
 import TabsSection from './tabs-section';
 import OrganizationSection from './organization-section';
 import VerifyEmailLayout from './verify-email-layout';
@@ -150,48 +147,47 @@ const StudioHome = () => {
       return <VerifyEmailLayout />;
     }
     return (
-      <Layout
-        lg={[{ span: 9 }, { span: 3 }]}
-        md={[{ span: 9 }, { span: 3 }]}
-        sm={[{ span: 9 }, { span: 3 }]}
-        xs={[{ span: 9 }, { span: 3 }]}
-        xl={[{ span: 9 }, { span: 3 }]}
-      >
-        <Layout.Element>
-          <section>
-            {showNewCourseContainer && (
-              <CreateNewCourseForm handleOnClickCancel={() => setShowNewCourseContainer(false)} />
-            )}
-            {isShowOrganizationDropdown && <OrganizationSection />}
-            <TabsSection
-              showNewCourseContainer={showNewCourseContainer}
-              onClickNewCourse={() => setShowNewCourseContainer(true)}
-              isShowProcessing={Boolean(isShowProcessing) && !isFiltered}
-              librariesV1Enabled={librariesV1Enabled}
-              librariesV2Enabled={librariesV2Enabled}
-            />
-          </section>
-        </Layout.Element>
-        <Layout.Element>
-          <HomeSidebar />
-        </Layout.Element>
-      </Layout>
+      <section>
+        {showNewCourseContainer && (
+          <CreateNewCourseForm handleOnClickCancel={() => setShowNewCourseContainer(false)} />
+        )}
+        {isShowOrganizationDropdown && <OrganizationSection />}
+        <TabsSection
+          showNewCourseContainer={showNewCourseContainer}
+          onClickNewCourse={() => setShowNewCourseContainer(true)}
+          isShowProcessing={Boolean(isShowProcessing) && !isFiltered}
+          librariesV1Enabled={librariesV1Enabled}
+          librariesV2Enabled={librariesV2Enabled}
+        />
+      </section>
     );
   };
 
+  const showHeaderActions = userIsActive && !isFailedLoadingPage;
+
   return (
     <>
-      <Header isHiddenMainMenu />
+      {/* Single merged header: the studio nav bar (logo + search + account) with
+          the page title and primary actions injected into its empty middle. */}
+      <div className="studio-home-header-bar">
+        <Header isHiddenMainMenu />
+        {showHeaderActions && (
+          <Container size="xl" className="studio-home-header-bar__overlay px-2.5">
+            <h1 className="studio-home-header-bar__title">
+              {intl.formatMessage(messages.headingTitle, { studioShortName: studioShortName || 'Studio' })}
+            </h1>
+            <div className="studio-home-header-bar__spacer" />
+            <div className="studio-home-header-bar__actions">
+              {headerButtons.map((button, index) => (
+                // eslint-disable-next-line react/no-array-index-key
+                <React.Fragment key={index}>{button}</React.Fragment>
+              ))}
+            </div>
+          </Container>
+        )}
+      </div>
       <Container size="xl" className="p-4 mt-3">
         <section className="mb-4">
-          <article className="studio-home-sub-header">
-            <section>
-              <SubHeader
-                title={intl.formatMessage(messages.headingTitle, { studioShortName: studioShortName || 'Studio' })}
-                headerActions={headerButtons}
-              />
-            </section>
-          </article>
           {getMainBody()}
         </section>
       </Container>
