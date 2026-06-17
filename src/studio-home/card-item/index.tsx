@@ -449,6 +449,7 @@ export const CardItem: React.FC<Props> = ({
         onClose={handleCloseDelete}
         hasCloseButton
         isBlocking
+        isOverflowVisible={false}
       >
         <ModalDialog.Header>
           <ModalDialog.Title>
