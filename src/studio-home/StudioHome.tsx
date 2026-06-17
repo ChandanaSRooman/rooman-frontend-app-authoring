@@ -18,10 +18,19 @@ import Header from '../header';
 import TabsSection from './tabs-section';
 import OrganizationSection from './organization-section';
 import VerifyEmailLayout from './verify-email-layout';
-import CreateNewCourseForm from './create-new-course-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
+
+// Rooman: "New course" routes to the Syllabus Agent (Rooman's course-creation
+// flow) instead of Studio's built-in new-course form. The URL is configurable
+// via the MFE runtime config key ROOMAN_SYLLABUS_URL; falls back to the dev host.
+const goToRoomanSyllabus = () => {
+  const cfg = getConfig() as { ROOMAN_SYLLABUS_URL?: string; };
+  window.location.assign(
+    cfg.ROOMAN_SYLLABUS_URL || 'https://dev-labs.13-232-120-92.sslip.io/syllabus/',
+  );
+};
 
 const StudioHome = () => {
   const intl = useIntl();
@@ -40,7 +49,6 @@ const StudioHome = () => {
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
-    setShowNewCourseContainer,
     librariesV1Enabled,
     librariesV2Enabled,
   } = useStudioHome();
@@ -92,8 +100,7 @@ const StudioHome = () => {
           variant="outline-primary"
           iconBefore={AddIcon}
           size="sm"
-          disabled={showNewCourseContainer}
-          onClick={() => setShowNewCourseContainer(true)}
+          onClick={goToRoomanSyllabus}
         >
           {intl.formatMessage(messages.addNewCourseBtnText)}
         </Button>,
@@ -148,13 +155,10 @@ const StudioHome = () => {
     }
     return (
       <section>
-        {showNewCourseContainer && (
-          <CreateNewCourseForm handleOnClickCancel={() => setShowNewCourseContainer(false)} />
-        )}
         {isShowOrganizationDropdown && <OrganizationSection />}
         <TabsSection
           showNewCourseContainer={showNewCourseContainer}
-          onClickNewCourse={() => setShowNewCourseContainer(true)}
+          onClickNewCourse={goToRoomanSyllabus}
           isShowProcessing={Boolean(isShowProcessing) && !isFiltered}
           librariesV1Enabled={librariesV1Enabled}
           librariesV2Enabled={librariesV2Enabled}
