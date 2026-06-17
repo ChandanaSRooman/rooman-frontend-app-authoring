@@ -7,7 +7,6 @@ import {
   screen,
   waitFor,
   initializeMocks,
-  within,
 } from '@src/testUtils';
 import { RequestStatus } from '../data/constants';
 import { COURSE_CREATOR_STATES } from '../constants';
@@ -54,13 +53,6 @@ beforeEach(() => {
   mockLocationAssign.mockClear();
 });
 
-/** Helper function to get the Studio header in the rendered HTML */
-function getHeaderElement(): HTMLElement {
-  const header = screen.getByRole('banner');
-  expect(header.tagName).toEqual('HEADER');
-  return header;
-}
-
 describe('<StudioHome />', () => {
   describe('api fetch fails', () => {
     beforeEach(async () => {
@@ -76,9 +68,8 @@ describe('<StudioHome />', () => {
 
     it('should render Studio home title', async () => {
       render(<StudioHome />, { path: '/home' });
-      // Search only within the header; don't match on the similar text in the body's error message.
-      const header = getHeaderElement();
-      expect(within(header).getByText('Studio home')).toBeInTheDocument();
+      // Match the heading specifically; don't match the similar text in the body's error message.
+      expect(screen.getByRole('heading', { name: 'Studio home' })).toBeInTheDocument();
     });
   });
 
@@ -91,8 +82,7 @@ describe('<StudioHome />', () => {
 
     it('should render page and page title correctly', async () => {
       render(<StudioHome />, { path: '/home' });
-      const header = getHeaderElement();
-      expect(within(header).getByText(`${studioShortName} home`)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: `${studioShortName} home` })).toBeInTheDocument();
     });
 
     it('should render "email staff" header button for users without create permission', async () => {
@@ -102,8 +92,7 @@ describe('<StudioHome />', () => {
       });
 
       render(<StudioHome />, { path: '/home' });
-      const header = getHeaderElement();
-      const link = within(header).getByRole('link', { name: 'Email staff to create course' });
+      const link = screen.getByRole('link', { name: 'Email staff to create course' });
       expect(link).toHaveAttribute('href', `mailto:${studioRequestEmail}`);
     });
 
@@ -114,8 +103,7 @@ describe('<StudioHome />', () => {
       });
 
       render(<StudioHome />, { path: '/home' });
-      const header = getHeaderElement();
-      within(header).getByRole('button', { name: 'New course' }); // will error if not found
+      screen.getByRole('button', { name: 'New course' }); // will error if not found
     });
 
     it('should render roles and permissions button', async () => {
@@ -125,8 +113,7 @@ describe('<StudioHome />', () => {
       });
 
       render(<StudioHome />, { path: '/home' });
-      const header = getHeaderElement();
-      const rolesButton = within(header).getByRole('link', { name: 'Roles and permissions' });
+      const rolesButton = screen.getByRole('link', { name: 'Roles and permissions' });
       expect(rolesButton).toHaveAttribute('href', 'https://admin-console.example.com/authz');
     });
 

@@ -136,7 +136,6 @@ interface CardMenuProps {
   showMenu: boolean;
   isShowRerunLink?: boolean;
   rerunLink: string | null;
-  lmsLink: string | null;
   showDelete?: boolean;
   onDelete?: () => void;
 }
@@ -145,7 +144,6 @@ const CardMenu = ({
   showMenu,
   isShowRerunLink,
   rerunLink,
-  lmsLink,
   showDelete = false,
   onDelete,
 }: CardMenuProps) => {
@@ -172,17 +170,12 @@ const CardMenu = ({
             <FormattedMessage {...messages.btnReRunText} />
           </Dropdown.Item>
         )}
-        <Dropdown.Item href={lmsLink}>
-          <FormattedMessage {...messages.viewLiveBtnText} />
-        </Dropdown.Item>
+        {/* "View live" is a footer button on the card; Delete lives only here. */}
         {showDelete && (
-          <>
-            <Dropdown.Divider />
-            <Dropdown.Item className="text-danger" onClick={onDelete}>
-              <Icon src={DeleteOutline} className="mr-2" />
-              <FormattedMessage {...messages.deleteCourseBtnText} />
-            </Dropdown.Item>
-          </>
+          <Dropdown.Item className="text-danger" onClick={onDelete}>
+            <Icon src={DeleteOutline} className="mr-2" />
+            <FormattedMessage {...messages.deleteCourseBtnText} />
+          </Dropdown.Item>
         )}
       </Dropdown.Menu>
     </Dropdown>
@@ -391,7 +384,6 @@ export const CardItem: React.FC<Props> = ({
                 showMenu={showActionsMenu}
                 isShowRerunLink={isShowRerunLink}
                 rerunLink={rerunLink}
-                lmsLink={lmsLink}
                 showDelete={showActionsMenu}
                 onDelete={handleOpenDelete}
               />

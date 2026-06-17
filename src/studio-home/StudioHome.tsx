@@ -167,30 +167,28 @@ const StudioHome = () => {
     );
   };
 
-  const showHeaderActions = userIsActive && !isFailedLoadingPage;
-
   return (
     <>
       {
         /* Single merged header: the studio nav bar (logo + search + account) with
-          the page title and primary actions injected into its empty middle. */
+          the page title and primary actions injected into its empty middle. The
+          title shows in every non-loading state; the action buttons are empty
+          unless the user is active and the page loaded. */
       }
       <div className="studio-home-header-bar">
         <Header isHiddenMainMenu />
-        {showHeaderActions && (
-          <Container size="xl" className="studio-home-header-bar__overlay px-2.5">
-            <h1 className="studio-home-header-bar__title">
-              {intl.formatMessage(messages.headingTitle, { studioShortName: studioShortName || 'Studio' })}
-            </h1>
-            <div className="studio-home-header-bar__spacer" />
-            <div className="studio-home-header-bar__actions">
-              {headerButtons.map((button, index) => (
-                // eslint-disable-next-line react/no-array-index-key
-                <React.Fragment key={index}>{button}</React.Fragment>
-              ))}
-            </div>
-          </Container>
-        )}
+        <Container size="xl" className="studio-home-header-bar__overlay px-2.5">
+          <h1 className="studio-home-header-bar__title">
+            {intl.formatMessage(messages.headingTitle, { studioShortName: studioShortName || 'Studio' })}
+          </h1>
+          <div className="studio-home-header-bar__spacer" />
+          <div className="studio-home-header-bar__actions">
+            {headerButtons.map((button, index) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <React.Fragment key={index}>{button}</React.Fragment>
+            ))}
+          </div>
+        </Container>
       </div>
       <Container size="xl" className="p-4 mt-3">
         <section className="mb-4">
