@@ -76,6 +76,15 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.delete-course.modal.body',
     defaultMessage: 'Are you sure you want to delete "{title}"? This permanently removes the course and all of its content. This action cannot be undone.',
   },
+  deleteCourseModalConfirmPrompt: {
+    id: 'course-authoring.studio-home.delete-course.modal.confirm-prompt',
+    defaultMessage: 'To confirm, type the course name below:',
+    description: 'Instruction telling the user to type the course name to enable the delete button.',
+  },
+  deleteCourseModalConfirmPlaceholder: {
+    id: 'course-authoring.studio-home.delete-course.modal.confirm-placeholder',
+    defaultMessage: 'Course name',
+  },
   deleteCourseModalCancel: {
     id: 'course-authoring.studio-home.delete-course.modal.cancel',
     defaultMessage: 'Cancel',

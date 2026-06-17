@@ -280,6 +280,7 @@ export const CardItem: React.FC<Props> = ({
   const [isDeleteOpen, openDelete, closeDelete] = useToggle(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [hasDeleteError, setHasDeleteError] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
 
   const destinationUrl: string = path ?? (
     waffleFlags.useNewCourseOutlinePage && !isLibraries
@@ -290,23 +291,37 @@ export const CardItem: React.FC<Props> = ({
   const readOnlyItem = !(lmsLink || rerunLink || url || path);
   const showActionsMenu = !(readOnlyItem || isLibraries || selectMode !== undefined);
 
+  const handleOpenDelete = useCallback(() => {
+    setConfirmText('');
+    setHasDeleteError(false);
+    openDelete();
+  }, [openDelete]);
+
+  const handleCloseDelete = useCallback(() => {
+    setConfirmText('');
+    closeDelete();
+  }, [closeDelete]);
+
   const handleConfirmDelete = useCallback(async () => {
     setIsDeleting(true);
     setHasDeleteError(false);
     try {
       await deleteCourse(courseKey);
-      closeDelete();
+      handleCloseDelete();
       onDeleted?.();
     } catch {
       setHasDeleteError(true);
     } finally {
       setIsDeleting(false);
     }
-  }, [courseKey, onDeleted, closeDelete]);
+  }, [courseKey, onDeleted, handleCloseDelete]);
   const isShowRerunLink = allowCourseReruns
     && rerunCreatorStatus
     && courseCreatorStatus === COURSE_CREATOR_STATES.granted;
   const title = (displayName ?? '').trim().length ? displayName : courseKey;
+  // Require the user to type the exact course name before the destructive
+  // delete is enabled (guards against an accidental single click).
+  const canConfirmDelete = confirmText.trim() === (title ?? '').trim() && !isDeleting;
 
   const getSubtitle = useCallback(() => {
     let subtitle = isLibraries ? <>{org} / {number}</> : <>{org} / {number} / {run}</>;
@@ -367,7 +382,7 @@ export const CardItem: React.FC<Props> = ({
                 rerunLink={rerunLink}
                 lmsLink={lmsLink}
                 showDelete={showActionsMenu}
-                onDelete={openDelete}
+                onDelete={handleOpenDelete}
               />
             )}
         />
@@ -418,7 +433,7 @@ export const CardItem: React.FC<Props> = ({
       <ModalDialog
         title={intl.formatMessage(messages.deleteCourseModalTitle)}
         isOpen={isDeleteOpen}
-        onClose={closeDelete}
+        onClose={handleCloseDelete}
         hasCloseButton
         isBlocking
       >
@@ -434,6 +449,20 @@ export const CardItem: React.FC<Props> = ({
             </Alert>
           )}
           <p>{intl.formatMessage(messages.deleteCourseModalBody, { title })}</p>
+          <Form.Group>
+            <Form.Label>
+              {intl.formatMessage(messages.deleteCourseModalConfirmPrompt)}
+              {' '}
+              <strong>{title}</strong>
+            </Form.Label>
+            <Form.Control
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={intl.formatMessage(messages.deleteCourseModalConfirmPlaceholder)}
+              disabled={isDeleting}
+              autoComplete="off"
+            />
+          </Form.Group>
         </ModalDialog.Body>
         <ModalDialog.Footer>
           <ActionRow>
@@ -443,7 +472,7 @@ export const CardItem: React.FC<Props> = ({
             <Button
               variant="danger"
               onClick={handleConfirmDelete}
-              disabled={isDeleting}
+              disabled={!canConfirmDelete}
             >
               {intl.formatMessage(messages.deleteCourseModalConfirm)}
             </Button>
