@@ -3,17 +3,29 @@ import React, {
   useCallback,
   useEffect,
   useRef,
+  useState,
 } from 'react';
 import { useSelector } from 'react-redux';
 import {
+  ActionRow,
+  Alert,
+  Button,
   Card,
   Dropdown,
   Icon,
   Form,
   IconButton,
+  ModalDialog,
   Stack,
+  useToggle,
 } from '@openedx/paragon';
-import { ArrowForward, MoreHoriz } from '@openedx/paragon/icons';
+import {
+  ArrowForward,
+  DeleteOutline,
+  Edit as EditIcon,
+  Launch,
+  MoreHoriz,
+} from '@openedx/paragon/icons';
 import { FormattedMessage, useIntl } from '@edx/frontend-platform/i18n';
 import { getConfig } from '@edx/frontend-platform';
 import { Link } from 'react-router-dom';
@@ -22,6 +34,7 @@ import { useWaffleFlags } from '@src/data/apiHooks';
 import { COURSE_CREATOR_STATES } from '@src/constants';
 import classNames from 'classnames';
 import { getStudioHomeData } from '../data/selectors';
+import { deleteCourse } from '../data/api';
 import messages from '../messages';
 
 export const PrevToNextName = ({ from, to }: { from: React.ReactNode; to?: React.ReactNode; }) => (
@@ -123,14 +136,16 @@ interface CardMenuProps {
   showMenu: boolean;
   isShowRerunLink?: boolean;
   rerunLink: string | null;
-  lmsLink: string | null;
+  showDelete?: boolean;
+  onDelete?: () => void;
 }
 
 const CardMenu = ({
   showMenu,
   isShowRerunLink,
   rerunLink,
-  lmsLink,
+  showDelete = false,
+  onDelete,
 }: CardMenuProps) => {
   const intl = useIntl();
 
@@ -155,9 +170,13 @@ const CardMenu = ({
             <FormattedMessage {...messages.btnReRunText} />
           </Dropdown.Item>
         )}
-        <Dropdown.Item href={lmsLink}>
-          <FormattedMessage {...messages.viewLiveBtnText} />
-        </Dropdown.Item>
+        {/* "View live" is a footer button on the card; Delete lives only here. */}
+        {showDelete && (
+          <Dropdown.Item className="text-danger" onClick={onDelete}>
+            <Icon src={DeleteOutline} className="mr-2" />
+            <FormattedMessage {...messages.deleteCourseBtnText} />
+          </Dropdown.Item>
+        )}
       </Dropdown.Menu>
     </Dropdown>
   );
@@ -205,6 +224,8 @@ interface BaseProps {
   isSelected?: boolean;
   itemId?: string;
   scrollIntoView?: boolean;
+  /** Called after a course is successfully deleted, so the list can refresh. */
+  onDeleted?: () => void;
 }
 
 type Props =
@@ -242,7 +263,9 @@ export const CardItem: React.FC<Props> = ({
   titleSecondaryLink,
   cardStatusWidget,
   scrollIntoView = false,
+  onDeleted,
 }) => {
+  const intl = useIntl();
   const {
     allowCourseReruns,
     courseCreatorStatus,
@@ -251,17 +274,58 @@ export const CardItem: React.FC<Props> = ({
   const waffleFlags = useWaffleFlags();
   const cardRef = useRef<HTMLDivElement>(null);
 
+  const [isDeleteOpen, openDelete, closeDelete] = useToggle(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteErrorMsg, setDeleteErrorMsg] = useState('');
+  const [confirmText, setConfirmText] = useState('');
+
   const destinationUrl: string = path ?? (
     waffleFlags.useNewCourseOutlinePage && !isLibraries
       ? url
       : new URL(url, getConfig().STUDIO_BASE_URL).toString()
   );
+  const isExternalUrl = /^https?:\/\//i.test(destinationUrl);
   const readOnlyItem = !(lmsLink || rerunLink || url || path);
   const showActionsMenu = !(readOnlyItem || isLibraries || selectMode !== undefined);
+
+  const handleOpenDelete = useCallback(() => {
+    setConfirmText('');
+    setDeleteErrorMsg('');
+    openDelete();
+  }, [openDelete]);
+
+  const handleCloseDelete = useCallback(() => {
+    setConfirmText('');
+    closeDelete();
+  }, [closeDelete]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    setIsDeleting(true);
+    setDeleteErrorMsg('');
+    try {
+      await deleteCourse(courseKey);
+      handleCloseDelete();
+      onDeleted?.();
+    } catch (err) {
+      // Surface the backend message when present (e.g. a 403 permission denial
+      // vs a generic 500) so the user understands why the delete was refused.
+      const backendMsg = (err as { response?: { data?: { error?: string; }; }; })?.response?.data?.error;
+      setDeleteErrorMsg(
+        typeof backendMsg === 'string' && backendMsg
+          ? backendMsg
+          : intl.formatMessage(messages.deleteCourseError),
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [courseKey, onDeleted, handleCloseDelete, intl]);
   const isShowRerunLink = allowCourseReruns
     && rerunCreatorStatus
     && courseCreatorStatus === COURSE_CREATOR_STATES.granted;
   const title = (displayName ?? '').trim().length ? displayName : courseKey;
+  // Require the user to type the exact course name before the destructive
+  // delete is enabled (guards against an accidental single click).
+  const canConfirmDelete = confirmText.trim() === (title ?? '').trim() && !isDeleting;
 
   const getSubtitle = useCallback(() => {
     let subtitle = isLibraries ? <>{org} / {number}</> : <>{org} / {number} / {run}</>;
@@ -287,10 +351,10 @@ export const CardItem: React.FC<Props> = ({
   }, [scrollIntoView]);
 
   return (
-    <div ref={cardRef} className="w-100">
+    <div ref={cardRef} className="w-100 h-100">
       <Card
         onClick={onClick}
-        className={classNames('card-item', {
+        className={classNames('card-item h-100', {
           selected: isSelected,
         })}
       >
@@ -320,7 +384,8 @@ export const CardItem: React.FC<Props> = ({
                 showMenu={showActionsMenu}
                 isShowRerunLink={isShowRerunLink}
                 rerunLink={rerunLink}
-                lmsLink={lmsLink}
+                showDelete={showActionsMenu}
+                onDelete={handleOpenDelete}
               />
             )}
         />
@@ -329,7 +394,95 @@ export const CardItem: React.FC<Props> = ({
             {cardStatusWidget}
           </Card.Status>
         )}
+        {showActionsMenu && (
+          <Card.Footer className="card-item-footer bg-white pt-0 justify-content-end">
+            {isExternalUrl ?
+              (
+                <Button
+                  as="a"
+                  href={destinationUrl}
+                  variant="outline-primary"
+                  size="sm"
+                  iconBefore={EditIcon}
+                >
+                  {intl.formatMessage(messages.editBtnText)}
+                </Button>
+              ) :
+              (
+                <Button
+                  as={Link}
+                  to={destinationUrl}
+                  variant="outline-primary"
+                  size="sm"
+                  iconBefore={EditIcon}
+                >
+                  {intl.formatMessage(messages.editBtnText)}
+                </Button>
+              )}
+            {lmsLink && (
+              <Button
+                variant="tertiary"
+                size="sm"
+                iconBefore={Launch}
+                as="a"
+                href={lmsLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {intl.formatMessage(messages.viewLiveBtnText)}
+              </Button>
+            )}
+          </Card.Footer>
+        )}
       </Card>
+      <ModalDialog
+        title={intl.formatMessage(messages.deleteCourseModalTitle)}
+        isOpen={isDeleteOpen}
+        onClose={handleCloseDelete}
+        hasCloseButton
+        isBlocking
+        isOverflowVisible={false}
+      >
+        <ModalDialog.Header>
+          <ModalDialog.Title>
+            {intl.formatMessage(messages.deleteCourseModalTitle)}
+          </ModalDialog.Title>
+        </ModalDialog.Header>
+        <ModalDialog.Body>
+          {deleteErrorMsg && (
+            <Alert variant="danger">
+              {deleteErrorMsg}
+            </Alert>
+          )}
+          <p>{intl.formatMessage(messages.deleteCourseModalBody, { title })}</p>
+          <Form.Group>
+            <Form.Label>
+              {intl.formatMessage(messages.deleteCourseModalConfirmPrompt)} <strong>{title}</strong>
+            </Form.Label>
+            <Form.Control
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={intl.formatMessage(messages.deleteCourseModalConfirmPlaceholder)}
+              disabled={isDeleting}
+              autoComplete="off"
+            />
+          </Form.Group>
+        </ModalDialog.Body>
+        <ModalDialog.Footer>
+          <ActionRow>
+            <ModalDialog.CloseButton variant="tertiary" disabled={isDeleting}>
+              {intl.formatMessage(messages.deleteCourseModalCancel)}
+            </ModalDialog.CloseButton>
+            <Button
+              variant="danger"
+              onClick={handleConfirmDelete}
+              disabled={!canConfirmDelete}
+            >
+              {intl.formatMessage(messages.deleteCourseModalConfirm)}
+            </Button>
+          </ActionRow>
+        </ModalDialog.Footer>
+      </ModalDialog>
     </div>
   );
 };
