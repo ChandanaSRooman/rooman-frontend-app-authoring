@@ -7,19 +7,10 @@
 }
 
 // ── Merged header bar ───────────────────────────────────────────────
-// The page title + primary actions are injected into the studio nav bar's
-// empty middle so they read as a single header. On wide screens the overlay
-// is absolutely positioned over the nav bar (clearing the logo on the left
-// and the search + account menu on the right); on narrow screens it falls
-// back to a normal row below the bar.
-//
-// COUPLING NOTE: On ≥992px the overlay clears the chrome of
-// @edx/frontend-component-header (StudioHeader). The clearance values below
-// must be updated if that package changes its left/right chrome widths.
-// Left chrome: ~9.5rem (logo + horizontal padding).
-// Right chrome: ~13rem (search button + account menu + padding).
-$_header-left-chrome: 9.5rem;
-$_header-right-chrome: 13rem;
+// The page title + primary actions render as a normal row directly below the
+// studio nav bar. (Earlier they were absolutely positioned as an overlay onto
+// the bar's empty middle, but at wide widths that collided with the header's
+// search + account menu, so the overlay was dropped for this simple row.)
 
 .studio-home-header-bar {
   position: relative;
@@ -50,37 +41,6 @@ $_header-right-chrome: 13rem;
     align-items: center;
     flex-wrap: wrap;
     gap: .5rem;
-  }
-
-  @media (width >= 992px) {
-    .studio-home-header-bar__overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 100%;
-      // .studio-header (the nav bar) is position:relative; z-index:1000 with a
-      // white background. This absolute overlay is a later sibling but has
-      // z-index:auto, so it was painted BEHIND the bar and hidden at >=992px
-      // (visible at narrow widths only because there it is position:static, in
-      // normal flow below the bar). Sit above the bar so title+actions show.
-      z-index: 1001;
-      // Override the Paragon <Container size="xl"> max-width. The absolute
-      // overlay must span the FULL nav bar for the chrome-clearing padding to
-      // line up; left capped + centred (its default) the title + actions were
-      // pushed out of the visible band on viewports wider than xl (they
-      // vanished at fullscreen while still showing at narrower widths).
-      max-width: none !important;
-      margin: 0 auto;
-      padding: 0 $_header-right-chrome 0 $_header-left-chrome;
-      flex-wrap: nowrap;
-      pointer-events: none;  // let clicks fall through to the nav bar beneath
-    }
-
-    .studio-home-header-bar__title,
-    .studio-home-header-bar__actions {
-      pointer-events: auto;
-    }
   }
 }
 
