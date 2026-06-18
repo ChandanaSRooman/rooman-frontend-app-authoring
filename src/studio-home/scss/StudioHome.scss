@@ -59,6 +59,12 @@ $_header-right-chrome: 13rem;
       left: 0;
       right: 0;
       height: 100%;
+      // .studio-header (the nav bar) is position:relative; z-index:1000 with a
+      // white background. This absolute overlay is a later sibling but has
+      // z-index:auto, so it was painted BEHIND the bar and hidden at >=992px
+      // (visible at narrow widths only because there it is position:static, in
+      // normal flow below the bar). Sit above the bar so title+actions show.
+      z-index: 1001;
       // Override the Paragon <Container size="xl"> max-width. The absolute
       // overlay must span the FULL nav bar for the chrome-clearing padding to
       // line up; left capped + centred (its default) the title + actions were
