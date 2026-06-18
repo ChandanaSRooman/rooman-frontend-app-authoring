@@ -59,6 +59,12 @@ $_header-right-chrome: 13rem;
       left: 0;
       right: 0;
       height: 100%;
+      // Override the Paragon <Container size="xl"> max-width. The absolute
+      // overlay must span the FULL nav bar for the chrome-clearing padding to
+      // line up; left capped + centred (its default) the title + actions were
+      // pushed out of the visible band on viewports wider than xl (they
+      // vanished at fullscreen while still showing at narrower widths).
+      max-width: none !important;
       margin: 0 auto;
       padding: 0 $_header-right-chrome 0 $_header-left-chrome;
       flex-wrap: nowrap;
